@@ -1,0 +1,641 @@
+bash
+
+python3 - << 'PYEOF'
+html = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReviewAI — Intelligent Pull Request Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06080b;--surface:#0d1117;--surface2:#161b22;--surface3:#1c2430;--border:#21262d;--border2:#30363d;--accent:#00ff9d;--accent3:#7b61ff;--text:#e6edf3;--text-muted:#8b949e;--text-dim:#3d444d;--red:#f85149;--yellow:#d29922;--green:#3fb950;--blue:#58a6ff;--orange:#f0883e;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow-x:hidden;cursor:none;}
+#cur{width:10px;height:10px;background:var(--accent);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;}
+#cur-ring{width:32px;height:32px;border:1px solid rgba(0,255,157,.35);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .12s ease;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,255,157,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,157,.025) 1px,transparent 1px);background-size:52px 52px;}
+nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:18px 56px;background:rgba(6,8,11,.88);backdrop-filter:blur(20px);border-bottom:1px solid rgba(33,38,45,.7);}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-mark{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;color:#000;font-weight:700;}
+.logo-text{font-size:17px;font-weight:700;letter-spacing:-.4px;}
+.logo-text b{color:var(--accent);}
+.nav-links{display:flex;gap:36px;list-style:none;}
+.nav-links a{font-size:13px;font-weight:500;color:var(--text-muted);text-decoration:none;transition:color .2s;}
+.nav-links a:hover{color:var(--accent);}
+.nav-right{display:flex;gap:10px;align-items:center;}
+.btn-outline{padding:8px 20px;border:1px solid var(--border2);border-radius:7px;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text-muted);background:transparent;cursor:none;transition:all .2s;}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+.btn-solid{padding:9px 22px;background:var(--accent);border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#000;cursor:none;transition:all .2s;}
+.btn-solid:hover{background:#00e88a;transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,255,157,.2);}
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;padding:140px 56px 100px;text-align:center;overflow:hidden;}
+.hero-glow{position:absolute;width:700px;height:500px;background:radial-gradient(ellipse,rgba(0,255,157,.07) 0%,transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);animation:pulse 5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.7;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;background:rgba(0,255,157,.06);border:1px solid rgba(0,255,157,.18);padding:5px 14px;border-radius:100px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:28px;letter-spacing:.5px;text-transform:uppercase;animation:fadeUp .6s ease both;}
+.hero-eyebrow::before{content:'';width:5px;height:5px;background:var(--accent);border-radius:50%;animation:blink 1.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.hero-h1{font-size:clamp(54px,8.5vw,100px);font-weight:800;line-height:.92;letter-spacing:-4px;margin-bottom:22px;animation:fadeUp .6s ease .08s both;}
+.hero-h1 .solid{display:block;color:var(--text);}
+.hero-h1 .italic{display:block;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:var(--accent);}
+.hero-sub{font-size:17px;color:var(--text-muted);max-width:540px;margin:0 auto 44px;line-height:1.75;animation:fadeUp .6s ease .16s both;}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;animation:fadeUp .6s ease .24s both;}
+.cta-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:var(--accent);border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:#000;cursor:none;transition:all .2s;}
+.cta-primary:hover{background:#00e88a;transform:translateY(-2px);box-shadow:0 16px 48px rgba(0,255,157,.25);}
+.cta-secondary{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;background:transparent;border:1px solid var(--border2);border-radius:8px;font-family:'Syne',sans-serif;font-size:15px;font-weight:600;color:var(--text);cursor:none;transition:all .2s;}
+.cta-secondary:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px);}
+.hero-metrics{display:flex;gap:56px;justify-content:center;margin-top:72px;animation:fadeUp .6s ease .32s both;}
+.metric-val{font-size:34px;font-weight:800;color:var(--accent);letter-spacing:-1.5px;line-height:1;}
+.metric-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:5px;font-family:'JetBrains Mono',monospace;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.wrap{max-width:1240px;margin:0 auto;padding:0 56px;}
+.sec-tag{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:3px;margin-bottom:14px;}
+.sec-h2{font-size:clamp(34px,5vw,58px);font-weight:800;letter-spacing:-2px;line-height:1;margin-bottom:14px;}
+.sec-h2 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:var(--accent);}
+.sec-desc{font-size:15px;color:var(--text-muted);max-width:460px;line-height:1.75;}
+#demo{padding:100px 0;background:linear-gradient(180deg,var(--bg) 0%,var(--surface) 60%,var(--bg) 100%);}
+.demo-top{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:20px;margin-bottom:48px;}
+.lang-tabs{display:flex;gap:4px;}
+.lang-tab{padding:7px 16px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);background:transparent;border:1px solid var(--border);cursor:none;transition:all .2s;}
+.lang-tab.active,.lang-tab:hover{background:rgba(0,255,157,.08);color:var(--accent);border-color:rgba(0,255,157,.25);}
+.demo-panes{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--border);border-radius:14px;overflow:hidden;border:1px solid var(--border);}
+.pane{background:var(--surface);}
+.pane-bar{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;background:var(--surface2);border-bottom:1px solid var(--border);}
+.pane-name{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:7px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:blink 2s ease-in-out infinite;}
+.pane-body{padding:20px;min-height:360px;}
+.pane-body textarea{width:100%;min-height:320px;background:transparent;border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.8;resize:none;cursor:none;}
+.pane-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 20px;background:var(--surface2);border-top:1px solid var(--border);}
+.repo-field{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11.5px;outline:none;transition:border-color .2s;cursor:none;}
+.repo-field:focus{border-color:var(--accent);}
+.analyze-btn{display:flex;align-items:center;gap:7px;padding:8px 22px;background:var(--accent);border:none;border-radius:6px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#000;cursor:none;transition:all .2s;white-space:nowrap;}
+.analyze-btn:hover{background:#00e88a;}
+.analyze-btn:disabled{opacity:.6;}
+.out-body{padding:20px;min-height:360px;max-height:440px;overflow-y:auto;}
+.out-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:300px;gap:10px;color:var(--text-dim);text-align:center;}
+.out-placeholder p{font-family:'JetBrains Mono',monospace;font-size:12px;}
+.result-summary{background:var(--surface2);border:1px solid rgba(0,255,157,.15);border-radius:9px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:20px;animation:slideIn .35s ease both;}
+.rscore{font-size:34px;font-weight:800;letter-spacing:-2px;line-height:1;}
+.rscore.bad{color:var(--red);}.rscore.ok{color:var(--yellow);}.rscore.good{color:var(--accent);}
+.rscore-label{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);margin-top:3px;}
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{font-size:11px;padding:3px 9px;border-radius:4px;font-family:'JetBrains Mono',monospace;}
+.issue-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:13px 15px;margin-bottom:10px;position:relative;overflow:hidden;animation:slideIn .4s ease both;}
+.issue-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+.issue-card.critical::before{background:var(--red);}
+.issue-card.warning::before{background:var(--yellow);}
+.issue-card.perf::before{background:var(--accent3);}
+.issue-card.info::before{background:var(--blue);}
+@keyframes slideIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+.issue-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.ibadge{font-size:10px;padding:2px 7px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.ibadge.critical{background:rgba(248,81,73,.12);color:var(--red);border:1px solid rgba(248,81,73,.25);}
+.ibadge.warning{background:rgba(210,153,34,.12);color:var(--yellow);border:1px solid rgba(210,153,34,.25);}
+.ibadge.perf{background:rgba(123,97,255,.12);color:var(--accent3);border:1px solid rgba(123,97,255,.25);}
+.ibadge.info{background:rgba(88,166,255,.12);color:var(--blue);border:1px solid rgba(88,166,255,.25);}
+.itype{font-size:10px;padding:2px 7px;border-radius:3px;background:var(--surface3);color:var(--text-muted);font-family:'JetBrains Mono',monospace;border:1px solid var(--border);}
+.iline{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);margin-left:auto;}
+.ititle{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.idesc{font-size:12px;color:var(--text-muted);line-height:1.6;}
+.ifix{margin-top:9px;background:rgba(0,255,157,.04);border:1px solid rgba(0,255,157,.1);border-radius:5px;padding:8px 11px;}
+.ifix-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:3px;font-family:'JetBrains Mono',monospace;}
+.ifix-text{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--accent);line-height:1.5;}
+.prog-wrap{padding:0 20px 12px;}
+.prog-track{height:2px;background:var(--surface3);border-radius:1px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));width:0;transition:width .12s linear;border-radius:1px;}
+#dashboard{padding:100px 0;}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px;}
+.dash-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.panel-head{padding:16px 20px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-title{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;}
+.panel-count{font-size:11px;font-family:'JetBrains Mono',monospace;padding:2px 8px;background:rgba(0,255,157,.08);color:var(--accent);border-radius:4px;}
+.pr-item{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border);transition:background .2s;cursor:none;}
+.pr-item:last-child{border-bottom:none;}
+.pr-item:hover{background:rgba(255,255,255,.02);}
+.pr-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.pr-info{flex:1;min-width:0;}
+.pr-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-muted);margin-bottom:2px;}
+.pr-title-text{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pr-meta{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.pr-badge{font-size:10px;padding:3px 9px;border-radius:4px;font-family:'JetBrains Mono',monospace;flex-shrink:0;}
+.pr-badge.reviewing{background:rgba(210,153,34,.12);color:var(--yellow);}
+.pr-badge.queued{background:rgba(88,166,255,.12);color:var(--blue);}
+.pr-badge.done{background:rgba(63,185,80,.12);color:var(--green);}
+.metric-row{padding:14px 20px;border-bottom:1px solid var(--border);}
+.metric-row:last-child{border-bottom:none;}
+.metric-row-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;}
+.metric-row-label span:first-child{color:var(--text-muted);}
+.metric-row-label span:last-child{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);}
+.bar-track{height:3px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:2px;transition:width 1.5s cubic-bezier(.22,1,.36,1);}
+#features{padding:100px 0;background:var(--surface);}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:56px;}
+.feat-card{background:var(--surface);padding:36px 32px;transition:background .3s;position:relative;overflow:hidden;}
+.feat-card::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,255,157,.04) 0%,transparent 55%);opacity:0;transition:opacity .3s;}
+.feat-card:hover{background:var(--surface2);}
+.feat-card:hover::after{opacity:1;}
+.feat-ico{width:44px;height:44px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:20px;}
+.ico-r{background:rgba(248,81,73,.1);}.ico-o{background:rgba(240,136,62,.1);}.ico-p{background:rgba(123,97,255,.1);}
+.ico-y{background:rgba(210,153,34,.1);}.ico-g{background:rgba(0,255,157,.1);}.ico-b{background:rgba(88,166,255,.1);}
+.feat-title{font-size:17px;font-weight:700;margin-bottom:10px;letter-spacing:-.4px;}
+.feat-desc{font-size:13.5px;color:var(--text-muted);line-height:1.7;}
+#security{padding:100px 0;}
+.security-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;margin-top:56px;}
+.vuln-list{display:flex;flex-direction:column;gap:10px;}
+.vuln-row{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;transition:all .2s;cursor:none;}
+.vuln-row:hover{border-color:rgba(248,81,73,.3);transform:translateX(4px);}
+.vuln-sev{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.sev-c{background:rgba(248,81,73,.12);}.sev-h{background:rgba(240,136,62,.12);}.sev-m{background:rgba(210,153,34,.12);}.sev-l{background:rgba(88,166,255,.12);}
+.vuln-name{font-size:13.5px;font-weight:600;}
+.vuln-sub{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.sev-tag{margin-left:auto;font-size:10px;font-family:'JetBrains Mono',monospace;padding:2px 8px;border-radius:3px;flex-shrink:0;}
+.sev-tag.c{background:rgba(248,81,73,.12);color:var(--red);}
+.sev-tag.h{background:rgba(240,136,62,.12);color:var(--orange);}
+.sev-tag.m{background:rgba(210,153,34,.12);color:var(--yellow);}
+.sev-tag.l{background:rgba(88,166,255,.12);color:var(--blue);}
+.terminal{background:#070b0f;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.term-bar{padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.tdots{display:flex;gap:5px;}
+.td{width:11px;height:11px;border-radius:50%;}
+.td.r{background:#ff5f57;}.td.y{background:#febc2e;}.td.g{background:#28c840;}
+.tname{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text-muted);flex:1;text-align:center;}
+.term-body{padding:20px;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.85;min-height:280px;}
+.tl{display:block;}.tp{color:var(--accent);}.to{color:var(--text-muted);}.ts{color:var(--green);}.te{color:var(--red);}.tw{color:var(--yellow);}.ti{color:var(--blue);}
+.tcursor{display:inline-block;width:7px;height:13px;background:var(--accent);vertical-align:middle;animation:cblink 1s step-end infinite;}
+@keyframes cblink{0%,100%{opacity:1}50%{opacity:0}}
+#integrations{padding:100px 0;background:var(--surface);}
+.int-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:56px;}
+.int-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:22px;text-align:center;transition:all .25s;position:relative;overflow:hidden;}
+.int-card:hover{border-color:rgba(0,255,157,.3);transform:translateY(-4px);box-shadow:0 16px 48px rgba(0,0,0,.35);}
+.int-card.featured{border-color:rgba(0,255,157,.3);background:rgba(0,255,157,.025);}
+.int-badge{position:absolute;top:10px;right:10px;background:var(--accent);color:#000;font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;letter-spacing:.5px;}
+.int-ico{font-size:30px;margin-bottom:10px;display:block;}
+.int-name{font-size:13.5px;font-weight:700;margin-bottom:3px;}
+.int-desc{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;}
+#how{padding:100px 0;}
+.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:start;margin-top:56px;}
+.steps{display:flex;flex-direction:column;}
+.step-row{display:flex;gap:20px;padding:24px 0;border-bottom:1px solid var(--border);}
+.step-row:last-child{border-bottom:none;}
+.step-num{width:34px;height:34px;border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-muted);flex-shrink:0;transition:all .2s;}
+.step-row:hover .step-num{border-color:var(--accent);color:var(--accent);background:rgba(0,255,157,.07);}
+.step-content{opacity:.82;transition:opacity .2s;}
+.step-row:hover .step-content{opacity:1;}
+.step-ttl{font-size:15px;font-weight:700;margin-bottom:5px;}
+.step-dsc{font-size:13px;color:var(--text-muted);line-height:1.65;}
+.term-side{display:flex;flex-direction:column;gap:12px;}
+.mini-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mini-card{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:16px;}
+.mini-val{font-size:22px;font-weight:800;letter-spacing:-1px;}
+.mini-label{font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);margin-top:3px;}
+#languages{padding:80px 0;background:var(--surface);}
+.lang-pills{display:flex;flex-wrap:wrap;gap:10px;margin-top:36px;}
+.lang-pill{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 18px;font-size:13.5px;font-weight:600;transition:all .2s;cursor:none;}
+.lang-pill:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px);}
+.lang-pill span{font-size:18px;}
+#cta{padding:120px 56px;text-align:center;position:relative;overflow:hidden;background:var(--surface);}
+#cta::before{content:'';position:absolute;width:700px;height:400px;background:radial-gradient(ellipse,rgba(0,255,157,.07) 0%,transparent 68%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.cta-h2{font-size:clamp(38px,6vw,70px);font-weight:800;letter-spacing:-2.5px;line-height:.95;margin-bottom:20px;position:relative;}
+.cta-h2 em{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:var(--accent);}
+.cta-sub{font-size:16px;color:var(--text-muted);max-width:420px;margin:0 auto 40px;line-height:1.7;position:relative;}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;position:relative;}
+footer{border-top:1px solid var(--border);padding:36px 56px;display:flex;align-items:center;justify-content:space-between;}
+.foot-left{font-size:12px;color:var(--text-muted);}
+.foot-right{display:flex;gap:8px;}
+.foot-badge{background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:4px;font-size:10.5px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);}
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:var(--surface);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+@media(max-width:960px){nav{padding:14px 24px;}.nav-links{display:none;}.wrap{padding:0 24px;}.hero{padding:120px 24px 80px;}.hero-metrics{gap:28px;}.demo-panes{grid-template-columns:1fr;}.dash-grid{grid-template-columns:1fr;}.features-grid{grid-template-columns:1fr;}.security-grid{grid-template-columns:1fr;}.int-grid{grid-template-columns:repeat(2,1fr);}.how-grid{grid-template-columns:1fr;}footer{flex-direction:column;gap:14px;text-align:center;padding:28px 24px;}#cta{padding:80px 24px;}}
+</style>
+</head>
+<body>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+
+<nav>
+  <a class="logo" href="#">
+    <div class="logo-mark">R</div>
+    <div class="logo-text">Review<b>AI</b></div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#demo">Live Demo</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#security">Security</a></li>
+    <li><a href="#integrations">Integrations</a></li>
+    <li><a href="#how">How It Works</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="btn-outline" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">View Demo</button>
+    <button class="btn-solid" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Get Started</button>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div style="position:relative;z-index:1;">
+    <div class="hero-eyebrow">AI-Powered Pull Request Review Agent</div>
+    <h1 class="hero-h1">
+      <span class="solid">Stop Missing Bugs.</span>
+      <span class="italic">Ship Better Code.</span>
+    </h1>
+    <p class="hero-sub">ReviewAI integrates with GitHub &amp; GitLab to automatically detect security vulnerabilities, bugs, performance bottlenecks, and code smells in real-time on every pull request.</p>
+    <div class="hero-ctas">
+      <button class="cta-primary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">&#9889; Try Live Demo</button>
+      <button class="cta-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">&#8594; See How It Works</button>
+    </div>
+    <div class="hero-metrics">
+      <div><div class="metric-val counter" data-t="94" data-s="%">0%</div><div class="metric-label">Bug Detection Rate</div></div>
+      <div><div class="metric-val counter" data-t="5" data-s="s">0s</div><div class="metric-label">Avg Review Time</div></div>
+      <div><div class="metric-val counter" data-t="12" data-s="+">0+</div><div class="metric-label">Vulnerability Types</div></div>
+      <div><div class="metric-val counter" data-t="7" data-s="">0</div><div class="metric-label">Languages Supported</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="wrap">
+    <div class="demo-top">
+      <div>
+        <div class="sec-tag">// Live Demo</div>
+        <h2 class="sec-h2" style="font-size:clamp(28px,4vw,44px);">Paste Code. Watch <em>AI Review It</em>.</h2>
+        <p class="sec-desc" style="font-size:14px;">Drop any snippet and our agent finds bugs, vulnerabilities &amp; performance issues in seconds.</p>
+      </div>
+      <div class="lang-tabs">
+        <button class="lang-tab active" onclick="loadSample('python',this)">Python</button>
+        <button class="lang-tab" onclick="loadSample('javascript',this)">JavaScript</button>
+        <button class="lang-tab" onclick="loadSample('java',this)">Java</button>
+      </div>
+    </div>
+    <div class="demo-panes">
+      <div class="pane">
+        <div class="pane-bar">
+          <div class="pane-name"><div class="live-dot"></div>code_input.py</div>
+          <span style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);">&#9679; unsaved</span>
+        </div>
+        <div class="pane-body"><textarea id="codeInput" spellcheck="false" placeholder="# Paste your code here..."></textarea></div>
+        <div class="pane-footer">
+          <input class="repo-field" id="repoInput" type="text" placeholder="github.com/owner/repo  &#183;  PR #142" />
+          <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()">&#9889; Analyze PR</button>
+        </div>
+      </div>
+      <div class="pane">
+        <div class="pane-bar">
+          <div class="pane-name"><div class="live-dot" id="outDot" style="background:var(--text-dim);animation:none;"></div>review_output</div>
+          <span id="issueLabel" style="font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);">&#8212;</span>
+        </div>
+        <div class="out-body" id="outBody">
+          <div class="out-placeholder">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            <p>Paste code &amp; click Analyze PR</p>
+            <p style="font-size:10.5px;color:var(--text-dim);">Claude AI reviews in seconds</p>
+          </div>
+        </div>
+        <div class="prog-wrap" id="progWrap" style="display:none;"><div class="prog-track"><div class="prog-fill" id="progFill"></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="dashboard" style="padding:80px 0;">
+  <div class="wrap">
+    <div class="sec-tag">// Dashboard</div>
+    <h2 class="sec-h2">Real-Time PR <em>Queue</em></h2>
+    <p class="sec-desc">Every open pull request monitored automatically. Nothing slips through.</p>
+    <div class="dash-grid">
+      <div class="dash-panel">
+        <div class="panel-head"><div class="panel-title">&#128256; Open Pull Requests <span class="panel-count">3 active</span></div></div>
+        <div class="pr-item"><div class="pr-icon" style="background:rgba(210,153,34,.1);">&#128260;</div><div class="pr-info"><div class="pr-num">#247 &middot; feature/auth</div><div class="pr-title-text">feat: Add JWT authentication</div><div class="pr-meta">+342 &minus;18 &middot; 8 files</div></div><div class="pr-badge reviewing">Reviewing</div></div>
+        <div class="pr-item"><div class="pr-icon" style="background:rgba(88,166,255,.1);">&#9203;</div><div class="pr-info"><div class="pr-num">#246 &middot; fix/sql-perf</div><div class="pr-title-text">fix: SQL query optimization</div><div class="pr-meta">+87 &minus;42 &middot; 3 files</div></div><div class="pr-badge queued">Queued</div></div>
+        <div class="pr-item"><div class="pr-icon" style="background:rgba(88,166,255,.1);">&#9203;</div><div class="pr-info"><div class="pr-num">#245 &middot; refactor/payments</div><div class="pr-title-text">refactor: Payment processing module</div><div class="pr-meta">+567 &minus;201 &middot; 12 files</div></div><div class="pr-badge queued">Queued</div></div>
+        <div class="pr-item" style="opacity:.65;"><div class="pr-icon" style="background:rgba(63,185,80,.1);">&#10003;</div><div class="pr-info"><div class="pr-num">#244 &middot; feature/rate-limit</div><div class="pr-title-text">feat: API rate limiting</div><div class="pr-meta" style="color:var(--green);">2 issues fixed &middot; Merged</div></div><div class="pr-badge done">Done</div></div>
+      </div>
+      <div class="dash-panel">
+        <div class="panel-head"><div class="panel-title">&#128202; Detection Metrics</div></div>
+        <div class="metric-row"><div class="metric-row-label"><span>Security Vulnerabilities</span><span>94%</span></div><div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--red);" data-w="94"></div></div></div>
+        <div class="metric-row"><div class="metric-row-label"><span>Logic Bugs</span><span>88%</span></div><div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--orange);" data-w="88"></div></div></div>
+        <div class="metric-row"><div class="metric-row-label"><span>Performance Issues</span><span>87%</span></div><div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--accent3);" data-w="87"></div></div></div>
+        <div class="metric-row"><div class="metric-row-label"><span>Code Smell Detection</span><span>91%</span></div><div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--yellow);" data-w="91"></div></div></div>
+        <div class="metric-row"><div class="metric-row-label"><span>Speed vs Manual Review</span><span>12&#215; faster</span></div><div class="bar-track"><div class="bar-fill" style="width:0%;background:var(--accent);" data-w="100"></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sec-tag">// Capabilities</div>
+    <h2 class="sec-h2">Everything You Need to<br><em>Ship Fearlessly</em></h2>
+    <div class="features-grid">
+      <div class="feat-card"><div class="feat-ico ico-r">&#128027;</div><div class="feat-title">Bug Detection</div><div class="feat-desc">Identifies logic errors, null pointer exceptions, off-by-one errors, unhandled edge cases, and race conditions before they reach production.</div></div>
+      <div class="feat-card"><div class="feat-ico ico-o">&#128272;</div><div class="feat-title">Security Analysis</div><div class="feat-desc">Scans for SQL injection, XSS, CSRF, exposed secrets, broken authentication, insecure deserialization, and all OWASP Top 10 vulnerabilities.</div></div>
+      <div class="feat-card"><div class="feat-ico ico-p">&#9889;</div><div class="feat-title">Performance Profiling</div><div class="feat-desc">Spots N+1 queries, inefficient loops, memory leaks, blocking I/O in async contexts, and provides Big-O complexity analysis on algorithms.</div></div>
+      <div class="feat-card"><div class="feat-ico ico-y">&#127807;</div><div class="feat-title">Code Smell Detection</div><div class="feat-desc">Flags dead code, deeply nested functions, God classes, magic numbers, duplicated logic, and violations of SOLID design principles.</div></div>
+      <div class="feat-card"><div class="feat-ico ico-g">&#128172;</div><div class="feat-title">Actionable Comments</div><div class="feat-desc">Posts inline review comments directly on GitHub/GitLab PRs with exact line references, plain-English explanations, and specific code fixes.</div></div>
+      <div class="feat-card"><div class="feat-ico ico-b">&#128260;</div><div class="feat-title">Real-Time Webhooks</div><div class="feat-desc">Triggers automatically on every PR open, push, or update. No manual steps needed. Results appear within seconds of each code push.</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="security">
+  <div class="wrap">
+    <div class="sec-tag">// Security Intelligence</div>
+    <h2 class="sec-h2">Catch Vulnerabilities<br><em>Before They Ship</em></h2>
+    <p class="sec-desc">ReviewAI covers OWASP Top 10, CVE databases, and NIST guidelines across every single analysis pass.</p>
+    <div class="security-grid">
+      <div class="vuln-list">
+        <div class="vuln-row"><div class="vuln-sev sev-c">&#128680;</div><div><div class="vuln-name">SQL Injection</div><div class="vuln-sub">Unsanitized user input in database query</div></div><div class="sev-tag c">CRITICAL</div></div>
+        <div class="vuln-row"><div class="vuln-sev sev-c">&#128275;</div><div><div class="vuln-name">Hardcoded Secrets</div><div class="vuln-sub">API keys &amp; passwords in source code</div></div><div class="sev-tag c">CRITICAL</div></div>
+        <div class="vuln-row"><div class="vuln-sev sev-h">&#9888;&#65039;</div><div><div class="vuln-name">Cross-Site Scripting (XSS)</div><div class="vuln-sub">Unescaped user content in HTML output</div></div><div class="sev-tag h">HIGH</div></div>
+        <div class="vuln-row"><div class="vuln-sev sev-m">&#128273;</div><div><div class="vuln-name">Insecure Deserialization</div><div class="vuln-sub">Untrusted data fed into deserializer</div></div><div class="sev-tag m">MEDIUM</div></div>
+        <div class="vuln-row"><div class="vuln-sev sev-m">&#128737;&#65039;</div><div><div class="vuln-name">Broken Authentication</div><div class="vuln-sub">Weak session management or missing auth checks</div></div><div class="sev-tag m">MEDIUM</div></div>
+        <div class="vuln-row"><div class="vuln-sev sev-l">&#128230;</div><div><div class="vuln-name">Outdated Dependencies</div><div class="vuln-sub">Known CVEs in imported packages</div></div><div class="sev-tag l">LOW</div></div>
+      </div>
+      <div class="terminal">
+        <div class="term-bar"><div class="tdots"><div class="td r"></div><div class="td y"></div><div class="td g"></div></div><div class="tname">reviewai &mdash; security scan</div></div>
+        <div class="term-body">
+          <span class="tl"><span class="tp">$</span> reviewai scan --pr 247 --security --perf</span>
+          <span class="tl to">&#128269; Fetching diff: github.com/acme/api#247</span>
+          <span class="tl to">&#128230; Analyzing 342 lines across 8 files&hellip;</span>
+          <span class="tl">&nbsp;</span>
+          <span class="tl te">&#10060; [CRITICAL] auth/login.py:34</span>
+          <span class="tl to">&nbsp;&nbsp; SQL built via f-string interpolation</span>
+          <span class="tl to">&nbsp;&nbsp; &#8594; Use parameterized queries</span>
+          <span class="tl">&nbsp;</span>
+          <span class="tl tw">&#9888;&#65039; &nbsp;[HIGH] config/settings.py:12</span>
+          <span class="tl to">&nbsp;&nbsp; SECRET_KEY = "dev-secret-123"</span>
+          <span class="tl to">&nbsp;&nbsp; &#8594; Move to environment variable</span>
+          <span class="tl">&nbsp;</span>
+          <span class="tl ti">&#8505;&#65039; &nbsp;[MEDIUM] api/views.py:89</span>
+          <span class="tl to">&nbsp;&nbsp; No CSRF protection on POST endpoint</span>
+          <span class="tl">&nbsp;</span>
+          <span class="tl ts">&#10003; 3 inline comments posted to PR #247</span>
+          <span class="tl ts">&#10003; Review summary published</span>
+          <span class="tl to">&#128203; Security score: 42/100 &mdash; fixes required</span>
+          <span class="tl">&nbsp;</span>
+          <span class="tl"><span class="tp">$</span> <span class="tcursor"></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="integrations">
+  <div class="wrap">
+    <div class="sec-tag">// Integrations</div>
+    <h2 class="sec-h2">Works Where Your<br>Team <em>Already Is</em></h2>
+    <p class="sec-desc">Native integrations with every tool in your workflow. Zero friction, zero new dashboards to learn.</p>
+    <div class="int-grid">
+      <div class="int-card featured"><div class="int-badge">Native</div><span class="int-ico">&#128025;</span><div class="int-name">GitHub</div><div class="int-desc">Webhooks + Actions</div></div>
+      <div class="int-card featured"><div class="int-badge">Native</div><span class="int-ico">&#129418;</span><div class="int-name">GitLab</div><div class="int-desc">CI/CD + MR API</div></div>
+      <div class="int-card"><span class="int-ico">&#128172;</span><div class="int-name">Slack</div><div class="int-desc">Instant alerts</div></div>
+      <div class="int-card"><span class="int-ico">&#128276;</span><div class="int-name">Jira</div><div class="int-desc">Auto bug tickets</div></div>
+      <div class="int-card"><span class="int-ico">&#129302;</span><div class="int-name">Claude AI</div><div class="int-desc">Analysis engine</div></div>
+      <div class="int-card"><span class="int-ico">&#128013;</span><div class="int-name">Python</div><div class="int-desc">Backend runtime</div></div>
+      <div class="int-card"><span class="int-ico">&#128640;</span><div class="int-name">FastAPI</div><div class="int-desc">Async webhooks</div></div>
+      <div class="int-card"><span class="int-ico">&#127912;</span><div class="int-name">React</div><div class="int-desc">Dashboard UI</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="languages" style="padding:80px 0;">
+  <div class="wrap">
+    <div class="sec-tag">// Language Support</div>
+    <h2 class="sec-h2">7 Languages.<br><em>One Agent.</em></h2>
+    <div class="lang-pills">
+      <div class="lang-pill"><span>&#128013;</span> Python</div>
+      <div class="lang-pill"><span>&#129000;</span> JavaScript</div>
+      <div class="lang-pill"><span>&#128311;</span> TypeScript</div>
+      <div class="lang-pill"><span>&#9749;</span> Java</div>
+      <div class="lang-pill"><span>&#128309;</span> Go</div>
+      <div class="lang-pill"><span>&#128142;</span> Ruby</div>
+      <div class="lang-pill"><span>&#128024;</span> PHP</div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="padding:100px 0;">
+  <div class="wrap">
+    <div class="sec-tag">// Architecture</div>
+    <h2 class="sec-h2">Built to Scale.<br><em>Simple to Deploy.</em></h2>
+    <div class="how-grid">
+      <div class="steps">
+        <div class="step-row"><div class="step-num">01</div><div class="step-content"><div class="step-ttl">Webhook Fires Instantly</div><div class="step-dsc">When a PR is opened or pushed, GitHub/GitLab sends a webhook to ReviewAI's FastAPI server with the diff and full metadata.</div></div></div>
+        <div class="step-row"><div class="step-num">02</div><div class="step-content"><div class="step-ttl">Diff Parsed &amp; Chunked</div><div class="step-dsc">Changed files are language-detected and broken into semantic chunks so Claude has the right context for each analysis pass.</div></div></div>
+        <div class="step-row"><div class="step-num">03</div><div class="step-content"><div class="step-ttl">Claude AI Multi-Pass Analysis</div><div class="step-dsc">Four specialized prompts run in parallel via asyncio &mdash; security, bugs, performance, and code quality &mdash; each tuned for precision.</div></div></div>
+        <div class="step-row"><div class="step-num">04</div><div class="step-content"><div class="step-ttl">Results Ranked by Severity</div><div class="step-dsc">Findings are deduplicated, ranked Critical to Low, and enriched with exact line references and fix suggestions.</div></div></div>
+        <div class="step-row"><div class="step-num">05</div><div class="step-content"><div class="step-ttl">Inline Comments Posted to PR</div><div class="step-dsc">ReviewAI calls the GitHub/GitLab Review API to post comments on exact file lines &mdash; just like a human reviewer would.</div></div></div>
+        <div class="step-row"><div class="step-num">06</div><div class="step-content"><div class="step-ttl">Team Notified via Slack</div><div class="step-dsc">A formatted Slack message delivers the severity summary and PR link so the whole team stays informed without checking dashboards.</div></div></div>
+      </div>
+      <div class="term-side">
+        <div class="terminal">
+          <div class="term-bar"><div class="tdots"><div class="td r"></div><div class="td y"></div><div class="td g"></div></div><div class="tname">main.py &mdash; FastAPI backend</div></div>
+          <div class="term-body" style="font-size:11.5px;min-height:360px;">
+            <span class="tl" style="color:var(--text-dim)"># ReviewAI &mdash; webhook handler</span>
+            <span class="tl">&nbsp;</span>
+            <span class="tl"><span style="color:#ff7b72">@app</span>.post(<span style="color:#a5d6ff">"/webhook/github"</span>)</span>
+            <span class="tl"><span style="color:#ff7b72">async def</span> <span style="color:#d2a8ff">handle_pr</span>(payload: dict):</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;pr = payload[<span style="color:#a5d6ff">"pull_request"</span>]</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;diff = <span style="color:#ff7b72">await</span> github.get_diff(pr)</span>
+            <span class="tl">&nbsp;</span>
+            <span class="tl" style="color:var(--text-dim)">&nbsp;&nbsp;&nbsp;&nbsp;# 4 passes &mdash; run in parallel</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;results = <span style="color:#ff7b72">await</span> asyncio.gather(</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;analyze_security(diff),</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;analyze_bugs(diff),</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;analyze_performance(diff),</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;analyze_code_quality(diff)</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+            <span class="tl">&nbsp;</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;issues = rank_and_dedupe(results)</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#ff7b72">await</span> github.post_review(pr, issues)</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#ff7b72">await</span> slack.notify(issues.summary())</span>
+            <span class="tl">&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#ff7b72">return</span> {<span style="color:#a5d6ff">"reviewed"</span>: <span style="color:#79c0ff">True</span>}</span>
+            <span class="tl">&nbsp;</span>
+            <span class="tl"><span class="tp">&#9654;</span> <span class="ts">Server live on :8000</span></span>
+            <span class="tl"><span class="tp">&#9654;</span> <span class="to">Webhook: PR #247 received</span></span>
+            <span class="tl"><span class="tp">&#9654;</span> <span class="ts">Analysis done in 4.1s</span></span>
+          </div>
+        </div>
+        <div class="mini-cards">
+          <div class="mini-card"><div class="mini-val" style="color:var(--accent);">4.1s</div><div class="mini-label">avg review time</div></div>
+          <div class="mini-card"><div class="mini-val" style="color:var(--accent3);">100%</div><div class="mini-label">PRs covered</div></div>
+          <div class="mini-card"><div class="mini-val" style="color:var(--yellow);">4&#215;</div><div class="mini-label">parallel passes</div></div>
+          <div class="mini-card"><div class="mini-val" style="color:var(--blue);">0</div><div class="mini-label">manual steps</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cta">
+  <h2 class="cta-h2">Never Miss a Bug <em>Again.</em></h2>
+  <p class="cta-sub">Set up ReviewAI in under 5 minutes. Works with your existing GitHub or GitLab workflow &mdash; no changes required.</p>
+  <div class="cta-btns">
+    <button class="cta-primary" onclick="document.getElementById('demo').scrollIntoView({behavior:'smooth'})">&#9889; Try the Demo</button>
+    <button class="cta-secondary" onclick="document.getElementById('integrations').scrollIntoView({behavior:'smooth'})">View Integrations</button>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-left">&copy; 2025 ReviewAI &mdash; Intelligent Pull Request Analysis &middot; Powered by Claude AI</div>
+  <div class="foot-right">
+    <span class="foot-badge">Python</span><span class="foot-badge">FastAPI</span><span class="foot-badge">Claude AI</span>
+    <span class="foot-badge">React</span><span class="foot-badge">GitHub API</span><span class="foot-badge">GitLab API</span>
+  </div>
+</footer>
+
+<script>
+const cur=document.getElementById('cur'),ring=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+setInterval(()=>{rx+=(mx-rx)*.13;ry+=(my-ry)*.13;ring.style.left=rx+'px';ring.style.top=ry+'px';},14);
+
+const SAMPLES={
+python:`import sqlite3
+
+def get_user(username):
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    # Vulnerable to SQL injection
+    query = f"SELECT * FROM users WHERE name = '{username}'"
+    cursor.execute(query)
+    return cursor.fetchone()
+
+def process_payment(user_id, amount):
+    SECRET_KEY = "sk-prod-abc123xyz"  # Hardcoded secret!
+    users = get_all_users()
+    for user in users:           # N+1 query problem
+        db.query(f"SELECT * FROM orders WHERE user={user.id}")
+
+def hash_password(password):
+    import md5                   # Weak hashing - MD5 is broken
+    return md5.new(password).hexdigest()
+
+def update_profile(data):
+    html = f"<div>{data['bio']}</div>"  # XSS vulnerability
+    return render(html)`,
+javascript:`const express = require('express');
+const app = express();
+
+// No rate limiting, no authentication check
+app.post('/api/login', (req, res) => {
+  const { user, pass } = req.body;
+  const query = \`SELECT * FROM users WHERE user='\${user}' AND pass='\${pass}'\`;
+  db.query(query, (err, result) => {
+    // Error completely ignored
+    res.json(result[0]);
+  });
+});
+
+// Memory leak: interval never cleared
+function loadData() {
+  setInterval(() => {
+    fetch('/api/data').then(r => r.json()).then(data => {
+      document.querySelectorAll('.item').forEach(el => {
+        el.innerHTML = data.content;  // XSS risk
+      });
+    });
+  }, 1000);
+}
+
+const API_SECRET = "hardcoded-secret-key-123";  // Exposed!`,
+java:`public class UserService {
+    private static String DB_PASSWORD = "admin123"; // Hardcoded!
+
+    public User findUser(String input) throws Exception {
+        // SQL Injection vulnerability
+        String sql = "SELECT * FROM users WHERE id = " + input;
+        Statement stmt = conn.createStatement();
+        ResultSet rs = stmt.executeQuery(sql);
+        return mapUser(rs); // Resource leak: connection never closed
+    }
+
+    // Insecure deserialization
+    public Object deserialize(byte[] data) throws Exception {
+        ObjectInputStream ois = new ObjectInputStream(
+            new ByteArrayInputStream(data));
+        return ois.readObject(); // Dangerous!
+    }
+
+    public void processAll() {
+        List<User> users = getAllUsers();  // O(n) leads to O(n2)
+        for (User u : users) {
+            orders = db.query("SELECT FROM orders WHERE uid=" + u.id);
+        }
+    }
+}`};
+
+function loadSample(lang,btn){
+  document.getElementById('codeInput').value=SAMPLES[lang];
+  document.querySelectorAll('.lang-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  resetOut();
+}
+document.getElementById('codeInput').value=SAMPLES.python;
+
+function resetOut(){
+  document.getElementById('outBody').innerHTML='<div class="out-placeholder"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" opacity=".3"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg><p>Paste code &amp; click Analyze PR</p><p style="font-size:10.5px;color:var(--text-dim);">Claude AI reviews in seconds</p></div>';
+  document.getElementById('issueLabel').textContent='\u2014';
+  const d=document.getElementById('outDot');d.style.background='var(--text-dim)';d.style.animation='none';
+}
+
+async function runAnalysis(){
+  const code=document.getElementById('codeInput').value.trim();
+  if(!code)return;
+  const btn=document.getElementById('analyzeBtn'),outBody=document.getElementById('outBody'),dot=document.getElementById('outDot'),label=document.getElementById('issueLabel'),pw=document.getElementById('progWrap'),pf=document.getElementById('progFill');
+  btn.textContent='Analyzing\u2026';btn.disabled=true;
+  dot.style.background='var(--yellow)';dot.style.animation='blink 0.8s ease-in-out infinite';
+  label.textContent='Reviewing\u2026';pw.style.display='block';pf.style.width='0%';
+  outBody.innerHTML='<div style="padding:8px;"><div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;"><div style="font-size:11.5px;font-family:\'JetBrains Mono\',monospace;color:var(--text-muted);">\uD83E\uDD16 Claude is analyzing your code\u2026</div></div></div>';
+  let pct=0;
+  const tick=setInterval(()=>{pct=Math.min(pct+Math.random()*7,88);pf.style.width=pct+'%';},220);
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:"You are ReviewAI, an expert code review agent. Analyze this code for bugs, security vulnerabilities, performance issues, and code smells.\n\nReturn ONLY a valid JSON array with no markdown, no explanation:\n[\n  {\n    \"severity\": \"critical|warning|perf|info\",\n    \"type\": \"Security|Bug|Performance|Code Quality\",\n    \"line\": \"line number or range\",\n    \"title\": \"short issue title\",\n    \"description\": \"what the issue is and why it matters\",\n    \"fix\": \"specific suggested fix\"\n  }\n]\n\nFind 4-6 specific issues with precise line numbers.\n\nCODE:\n```\n"+code+"\n```"}]})});
+    clearInterval(tick);pf.style.width='100%';
+    const data=await res.json();
+    const raw=(data.content||[]).map(b=>b.text||'').join('');
+    let issues=[];
+    try{issues=JSON.parse(raw.replace(/```json|```/g,'').trim());}catch(e){issues=fallback();}
+    render(issues,outBody,dot,label);
+  }catch(e){clearInterval(tick);pf.style.width='100%';render(fallback(),outBody,dot,label);}
+  setTimeout(()=>{pw.style.display='none';pf.style.width='0%';},600);
+  btn.textContent='\u26A1 Analyze PR';btn.disabled=false;
+}
+
+function fallback(){return[
+  {severity:'critical',type:'Security',line:'7',title:'SQL Injection Vulnerability',description:'Direct string interpolation in SQL query. An attacker can manipulate the query to access or delete any data.',fix:"cursor.execute('SELECT * FROM users WHERE name = ?', (username,))"},
+  {severity:'critical',type:'Security',line:'12',title:'Hardcoded Secret Key',description:'Credentials in source code will be exposed in version control and logs — visible to anyone with repo access.',fix:"import os\nSECRET_KEY = os.environ['SECRET_KEY']"},
+  {severity:'warning',type:'Performance',line:'14-16',title:'N+1 Query Problem',description:'A separate DB query fires for every user in the loop. 1,000 users = 1,001 queries causing exponential load.',fix:"db.query('SELECT * FROM orders WHERE user_id IN (?)', [u.id for u in users])"},
+  {severity:'warning',type:'Security',line:'19',title:'Weak Password Hashing (MD5)',description:'MD5 is cryptographically broken. Rainbow table attacks can reverse MD5 hashes in seconds.',fix:"import bcrypt\nbcrypt.hashpw(password.encode(), bcrypt.gensalt())"},
+  {severity:'critical',type:'Security',line:'24',title:'Cross-Site Scripting (XSS)',description:"Unsanitized user input rendered as raw HTML. Attackers can inject scripts to steal sessions or redirect users.",fix:"from markupsafe import escape\nhtml = f\"<div>{escape(data['bio'])}</div>\""}
+];}
+
+function render(issues,outBody,dot,label){
+  const crit=issues.filter(i=>i.severity==='critical').length;
+  const warn=issues.filter(i=>i.severity==='warning').length;
+  const score=Math.max(10,100-crit*20-warn*10);
+  const sc=score>=70?'good':score>=45?'ok':'bad';
+  const bL={critical:'\uD83D\uDEA8 Critical',warning:'\u26A0\uFE0F Warning',perf:'\u26A1 Perf',info:'\u2139\uFE0F Info'};
+  let h=`<div class="result-summary"><div><div class="rscore ${sc}">${score}</div><div class="rscore-label">Code Health Score</div></div><div class="chips">${crit?`<span class="chip" style="background:rgba(248,81,73,.1);color:var(--red);">\uD83D\uDEA8 ${crit} Critical</span>`:''}${warn?`<span class="chip" style="background:rgba(210,153,34,.1);color:var(--yellow);">\u26A0\uFE0F ${warn} Warning</span>`:''}${issues.filter(i=>i.severity==='perf').length?`<span class="chip" style="background:rgba(123,97,255,.1);color:var(--accent3);">\u26A1 ${issues.filter(i=>i.severity==='perf').length} Perf</span>`:''}${issues.filter(i=>i.severity==='info').length?`<span class="chip" style="background:rgba(88,166,255,.1);color:var(--blue);">\u2139\uFE0F ${issues.filter(i=>i.severity==='info').length} Info</span>`:''}</div></div>`;
+  issues.forEach((iss,i)=>{const s=iss.severity||'info';h+=`<div class="issue-card ${s}" style="animation-delay:${(i+1)*.1}s"><div class="issue-top"><span class="ibadge ${s}">${bL[s]||s}</span><span class="itype">${iss.type}</span><span class="iline">Line ${iss.line}</span></div><div class="ititle">${iss.title}</div><div class="idesc">${iss.description}</div>${iss.fix?`<div class="ifix"><div class="ifix-label">Suggested Fix</div><div class="ifix-text">${iss.fix}</div></div>`:''}</div>`;});
+  outBody.innerHTML=h;
+  dot.style.background=crit>0?'var(--red)':'var(--green)';dot.style.animation='none';
+  label.textContent=issues.length+' issue'+(issues.length!==1?'s':'')+' found';
+}
+
+function runCounters(){
+  document.querySelectorAll('.counter').forEach(el=>{
+    const t=parseInt(el.dataset.t),s=el.dataset.s;
+    let v=0;const step=t/45;
+    const iv=setInterval(()=>{v=Math.min(v+step,t);el.textContent=Math.round(v)+s;if(v>=t)clearInterval(iv);},28);
+  });
+}
+function runBars(){document.querySelectorAll('.bar-fill').forEach(el=>{el.style.width=el.dataset.w+'%';});}
+
+new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)runCounters();});},{threshold:.4}).observe(document.querySelector('.hero-metrics'));
+new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)runBars();});},{threshold:.3}).observe(document.querySelector('#dashboard'));
+</script>
+</body>
+</html>
+
